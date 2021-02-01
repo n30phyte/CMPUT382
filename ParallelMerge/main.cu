@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cuda.h>
+#include <cuda_device_runtime_api.h>
 
 #include "libwb/wb.h"
 
@@ -37,12 +38,14 @@ __device__ int linearSearch(const int value, const int *A, const int N) {
 
 __global__ void merge(int *C, const int *A, const int *B, const int N) {
     int threadId = blockDim.x * blockIdx.x + threadIdx.x;
-    // Do A
-    int j = binarySearch(A[threadId], B, N);
-    C[threadId + j] = A[threadId];
-    // Do B
-    int i = binarySearch(B[threadId], A, N);
-    C[threadId + i] = B[threadId];
+
+    if( threadId < N) {
+        const int *source_array = blockIdx.y == 0 ? A : B;
+        const int *search_array = blockIdx.y == 0 ? B : A;
+
+        int i = binarySearch(source_array[threadId], search_array, N);
+        C[threadId + i] = source_array[threadId];
+    }
 }
 
 int main(int argc, char **argv) {
@@ -66,7 +69,7 @@ int main(int argc, char **argv) {
     wbLog(TRACE, "The input length is ", N);
 
     int threads = 256;
-    int blocks = N / threads + ((N % threads == 0) ? 0 : 1);
+    int blocks = (N + threads - 1) / threads;
 
     wbTime_start(GPU, "Allocating GPU memory.");
     cudaMalloc((void **) &deviceA, N * sizeof(int));
@@ -82,7 +85,7 @@ int main(int argc, char **argv) {
 
     // Perform on CUDA.
     const dim3 blockSize(threads, 1, 1);
-    const dim3 gridSize(blocks, 1, 1);
+    const dim3 gridSize(blocks, 2, 1);
 
     wbTime_start(Compute, "Performing CUDA computation");
     merge <<<gridSize, blockSize>>>(deviceC, deviceA, deviceB, N);
