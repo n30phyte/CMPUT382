@@ -1,0 +1,98 @@
+Part 1
+
+Question 1: Cannot set pointer to a value at initialization.
+
+void test1()
+{
+  int n = 3;
+  int *a = &n;
+
+  *a = *a + 2;
+
+  printf("%d\n", *a);
+}
+
+Question 2: b was not properly declared as a pointer, so it cannot be dereferenced
+
+void test2()
+{
+  int *a, *b;
+  a = (int *)malloc(sizeof(int));
+  b = (int *)malloc(sizeof(int));
+
+  if (!(a && b))
+  {
+    printf("Out of memory");
+    exit(-1);
+  }
+
+  *a = 2;
+  *b = 3;
+}
+
+Question 3: Data type was not specified in the malloc
+
+void test3()
+{
+  int i, *a = (int *)malloc(1000 * sizeof(int));
+
+  if (!a)
+  {
+    printf("Out of memory");
+    exit(-1);
+  }
+
+  for (i = 0; i < 1000; i++)
+  {
+    *(i + a) = i;
+  }
+}
+
+Question 4: Not proper malloc for 2d array.
+
+void test4()
+{
+  int **a = malloc(3 * sizeof(int *));
+
+  for (int i = 0; i < 3; i++)
+  {
+    a[i] = (int *)malloc(100 * sizeof(int));
+  }
+
+  a[1][1] = 5;
+}
+
+Question 5: a isn't dereferenced before checked.
+
+void test5()
+{
+  int *a = (int *)malloc(sizeof(int));
+  scanf("%d", a);
+
+  if (!(*a))
+    printf("Value is 0\n");
+}
+
+Part 2
+
+y_1 should be easier to implement than y_2 since the calculation does not rely on
+the result of the same calculation but at a different index, so a single line of calculation
+should be all that's required in the kernel.
+This also allows the GPU to calculate all the indices of y_1 at the same time, making it faster.
+
+Part 4
+
+1. GeForce GTX 750 Ti
+2. The answer will be gridDim * blockDim = 33 553 920 threads
+3. The programmer might notice that using the maximum number of threads does not map nicely to the 32 threads/warp number, which negatively impacts performance.
+4. The resources used in the kernel such as registers used per thread, or shared memory use might limit the number of threads launched.
+5. 2 147 483 648 Bytes or 2 GB
+6. Global memory is memory that can be accessed by all the threads in the grid
+7. 65536 Bytes or 64 KB
+8. It's a small read only cache of global memory, accessible by all threads
+9. 49152 Bytes or 48 KB
+10. Smaller read-write memory that's shared by all threads in a block.
+11. 1024 x 1024 x 64
+12. 2 147 483 647 x 65535 x 65535
+13. 32
+14. The warp size is the number of sequential threads running concurrently on a single SM
