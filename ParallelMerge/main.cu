@@ -5,32 +5,36 @@
 #include "libwb/wb.h"
 
 __device__ int binarySearch(const int value, const int *A, const int N) {
-    int start = 0;
-    int end = N - 1;
+    int left = 0;
+    int right = N - 1;
 
     int location = N;
 
-    while (start <= end) {
-        int middle = (start + end) / 2;
+    while (left <= right) {
+        int middle = (left + right) / 2;
 
-        // Target is larger than middle, move start.
-        if (A[middle] <= value) {
-            start = middle + 1;
+        if ((blockIdx.y == 0) ?     // Check if operating on A or B
+            (A[middle] <= value) :  // If A, only return after value increases
+            (A[middle] < value)) {  // If B, return as soon as you meet the value or it's larger
+
+            left = middle + 1;
         } else {
             location = middle;
-            end = middle - 1;
+            right = middle - 1;
         }
+
     }
     return location;
 }
 
 __device__ int linearSearch(const int value, const int *A, const int N) {
-    int i;
+    int i = 0;
 
-    for (i = 0; i < N; i++) {
-        if (A[i] > value) {
-            return i + 1;
-        }
+    while (i < N &&             // Not at the end of the list
+           (blockIdx.y == 0) ?  // Check if operating on A or B
+           (A[i] <= value) :    // If A, only return after value increases
+           (A[i] < value)) {    // If B, return as soon as you meet the value or it's larger
+        i++;
     }
 
     return i;
@@ -39,9 +43,10 @@ __device__ int linearSearch(const int value, const int *A, const int N) {
 __global__ void merge(int *C, const int *A, const int *B, const int N) {
     int threadId = blockDim.x * blockIdx.x + threadIdx.x;
 
-    if( threadId < N) {
-        const int *source_array = blockIdx.y == 0 ? A : B;
-        const int *search_array = blockIdx.y == 0 ? B : A;
+    if (threadId < N) {
+        // Operate on a different array based on which block we're on.
+        const int *source_array = (blockIdx.y == 0) ? A : B;
+        const int *search_array = (blockIdx.y == 0) ? B : A;
 
         int i = binarySearch(source_array[threadId], search_array, N);
         C[threadId + i] = source_array[threadId];
