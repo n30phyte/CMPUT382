@@ -28,16 +28,16 @@ __device__ int binarySearch(const int value, const int *A, const int N) {
 }
 
 __device__ int linearSearch(const int value, const int *A, const int N) {
-    int i = 0;
 
-    while (i < N &&             // Not at the end of the list
-           (blockIdx.y == 0) ?  // Check if operating on A or B
-           (A[i] <= value) :    // If A, only return after value increases
-           (A[i] < value)) {    // If B, return as soon as you meet the value or it's larger
-        i++;
+    for (int i = 0; i < N; i++) {
+        if ((blockIdx.y == 0) ?     // Check if operating on A or B
+            (A[i] > value) :        // If A, only return after value increases
+            (A[i] >= value)) {      // If B, return as soon as you meet the value or it's larger
+            return i;
+        }
     }
 
-    return i;
+    return N;
 }
 
 __global__ void merge(int *C, const int *A, const int *B, const int N) {
@@ -48,7 +48,7 @@ __global__ void merge(int *C, const int *A, const int *B, const int N) {
         const int *source_array = (blockIdx.y == 0) ? A : B;
         const int *search_array = (blockIdx.y == 0) ? B : A;
 
-        int i = binarySearch(source_array[threadId], search_array, N);
+        int i = linearSearch(source_array[threadId], search_array, N);
         C[threadId + i] = source_array[threadId];
     }
 }
