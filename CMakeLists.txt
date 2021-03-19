@@ -4,6 +4,8 @@ project(CMPUT382 CUDA CXX)
 set(CMAKE_CUDA_STANDARD 14)
 
 add_subdirectory(libwb)
+include_directories(libwb)
+add_subdirectory(VectorAdd)
 add_subdirectory(Convolution)
 add_subdirectory(ExclusiveScan)
 add_subdirectory(Histogram)

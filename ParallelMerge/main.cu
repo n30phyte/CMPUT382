@@ -2,7 +2,7 @@
 #include <cuda.h>
 #include <cuda_device_runtime_api.h>
 
-#include "libwb/wb.h"
+#include "wb.h"
 
 __device__ int binarySearch(const int value, const int *A, const int N) {
     int left = 0;

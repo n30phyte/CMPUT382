@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "libwb/wb.h"
+#include "wb.h"
 
 #define MASK_WIDTH 5
 #define MASK_RADIUS MASK_WIDTH / 2

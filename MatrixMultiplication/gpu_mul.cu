@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "libwb/wb.h"
+#include "wb.h"
 
 __global__ void matrixMultiply(float *A, float *B, float *C, int numARows,
                                int numAColumns, int numBRows, int numBColumns) {

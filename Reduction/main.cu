@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "libwb/wb.h"
+#include "wb.h"
 
 #define BLOCK_SIZE 512
 
