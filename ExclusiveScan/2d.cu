@@ -1,14 +1,15 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
 #include "wb.h"
+#include "exclusive_scan.h"
 
 #define BLOCK_SIZE 512 //TODO: You can change this
 
 #define TRANSPOSE_TILE_DIM 32
 #define TRANSPOSE_BLOCK_ROWS 8
 
-#define wbCheck(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+#define wbCheck(ans) gpuAssert((ans), __FILE__, __LINE__)
 
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
 {
@@ -22,7 +23,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 
 // TODO: write a simple transpose kernel here
 
-// TODO: write 1D scan kernel here
 
 // TODO: write recursive scan wrapper on CPU here
 
@@ -62,11 +62,10 @@ int main(int argc, char **argv) {
                        cudaMemcpyHostToDevice));
     wbTime_stop(GPU, "Copying input memory to the GPU.");
 
+    int gridSize = (numInputCols + BLOCK_SIZE - 1)/BLOCK_SIZE;
     wbTime_start(Compute, "Performing CUDA computation");
-    //TODO: Modify this to complete the functionality of the scan on the deivce
     for (int i = 0; i < numInputRows; ++i) {
-        // TODO: call your 1d scan kernel for each row here
-
+        exclusiveScan<<<gridSize, BLOCK_SIZE>>>(deviceInput, deviceTmpOutput, numInputCols);
         wbCheck(cudaDeviceSynchronize());
     }
 

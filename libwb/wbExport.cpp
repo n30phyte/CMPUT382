@@ -8,7 +8,7 @@ static inline void wbExportText_setFile(wbExportText_t text,
       wbFile_delete(wbExportText_getFile(text));
     }
     if (path != nullptr) {
-      wbExportText_getFile(text) = wbFile_open(path, "SHARED_WIDTH+");
+      wbExportText_getFile(text) = wbFile_open(path, "W+");
     } else {
       wbExportText_getFile(text) = nullptr;
     }
@@ -68,7 +68,7 @@ static inline void wbExportRaw_setFile(wbExportRaw_t raw,
       wbFile_delete(wbExportRaw_getFile(raw));
     }
     if (path != nullptr) {
-      wbExportRaw_getFile(raw) = wbFile_open(path, "SHARED_WIDTH+");
+      wbExportRaw_getFile(raw) = wbFile_open(path, "w+");
     } else {
       wbExportRaw_getFile(raw) = nullptr;
     }
@@ -152,7 +152,7 @@ static inline void wbExportCSV_setFile(wbExportCSV_t csv,
       wbFile_delete(wbExportCSV_getFile(csv));
     }
     if (path != nullptr) {
-      wbExportCSV_getFile(csv) = wbFile_open(path, "SHARED_WIDTH+");
+      wbExportCSV_getFile(csv) = wbFile_open(path, "w+");
     } else {
       wbExportCSV_getFile(csv) = nullptr;
     }
