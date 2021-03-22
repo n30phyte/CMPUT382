@@ -89,12 +89,6 @@
                         					
                     </folderInfo>
                     					
-                    <fileInfo id="com.nvidia.cuda.toolchain.linux.configuration.debug.1075272378.1397280960" name="2d.cu" rcbsApplicability="disable" resourcePath="2d.cu" toolsToInvoke="nvcc.compiler.896298585.1905023761">
-                        						
-                        <tool id="nvcc.compiler.896298585.1905023761" name="NVCC Compiler" superClass="nvcc.compiler.896298585"/>
-                        					
-                    </fileInfo>
-                    					
                     <sourceEntries>
                         						
                         <entry excluding="2d.cu|libwb" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
@@ -192,12 +186,6 @@
                         </toolChain>
                         					
                     </folderInfo>
-                    					
-                    <fileInfo id="com.nvidia.cuda.toolchain.linux.configuration.release.1269884596.1096641000" name="1d.cu" rcbsApplicability="disable" resourcePath="1d.cu" toolsToInvoke="nvcc.compiler.1613117593.1341255822">
-                        						
-                        <tool id="nvcc.compiler.1613117593.1341255822" name="NVCC Compiler" superClass="nvcc.compiler.1613117593"/>
-                        					
-                    </fileInfo>
                     				
                 </configuration>
                 			
@@ -293,9 +281,9 @@
                         					
                     </folderInfo>
                     					
-                    <fileInfo id="com.nvidia.cuda.toolchain.linux.configuration.debug.1075272378.2018177659.1366018592" name="2d.cu" rcbsApplicability="disable" resourcePath="2d.cu" toolsToInvoke="nvcc.compiler.976694329.1750146386">
+                    <fileInfo id="com.nvidia.cuda.toolchain.linux.configuration.debug.1075272378.2018177659.1735511151" name="2d.cu" rcbsApplicability="disable" resourcePath="2d.cu" toolsToInvoke="nvcc.compiler.976694329.694658236">
                         						
-                        <tool id="nvcc.compiler.976694329.1750146386" name="NVCC Compiler" superClass="nvcc.compiler.976694329"/>
+                        <tool id="nvcc.compiler.976694329.694658236" name="NVCC Compiler" superClass="nvcc.compiler.976694329"/>
                         					
                     </fileInfo>
                     					

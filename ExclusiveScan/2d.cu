@@ -4,27 +4,43 @@
 #include "wb.h"
 #include "exclusive_scan.h"
 
-#define BLOCK_SIZE 512 //TODO: You can change this
-
 #define TRANSPOSE_TILE_DIM 32
 #define TRANSPOSE_BLOCK_ROWS 8
 
-#define wbCheck(ans) gpuAssert((ans), __FILE__, __LINE__)
+__global__ void kernelPrint(float *array, int cols, int rows) {
+    for (int j = 0; j < rows; j++) {
+        for (int i = 0; i < cols; i++) {
+            printf("%f ", array[j * cols + i]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
 
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
-{
-    if (code != cudaSuccess)
-    {
-        fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-        if (abort) exit(code);
+__global__ void transposeMatrix(float *input, float *output, int width, int height) {
+    __shared__ float tile[TRANSPOSE_TILE_DIM][TRANSPOSE_TILE_DIM];
+
+    int x = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.y;
+    int inputIdx = x + y * width;
+    if (x < width && y < height) {
+        for (int i = 0; i < TRANSPOSE_TILE_DIM; i += TRANSPOSE_BLOCK_ROWS) {
+            tile[threadIdx.y + i][threadIdx.x] = input[inputIdx + i * width];
+        }
+    }
+    __syncthreads();
+
+    x = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.x;
+    y = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.y;
+    int outputIdx = x + y * height;
+
+    if (y < width && x < height) {
+
+        for (int i = 0; i < TRANSPOSE_TILE_DIM; i += TRANSPOSE_BLOCK_ROWS) {
+            output[outputIdx + i * height] = tile[threadIdx.x][threadIdx.y + i];
+        }
     }
 }
-// TODO: write kernel to uniform add each aux array value to corresponding block output
-
-// TODO: write a simple transpose kernel here
-
-
-// TODO: write recursive scan wrapper on CPU here
 
 int main(int argc, char **argv) {
 
@@ -39,61 +55,58 @@ int main(int argc, char **argv) {
     args = wbArg_read(argc, argv);
 
     wbTime_start(Generic, "Importing data and creating memory on host");
-    hostInput = (float *)wbImport(wbArg_getInputFile(args, 0), &numInputRows, &numInputCols);
-    cudaHostAlloc(&hostOutput, numInputRows * numInputCols * sizeof(float),
-                  cudaHostAllocDefault);
+    hostInput = (float *) wbImport(wbArg_getInputFile(args, 0), &numInputRows, &numInputCols);
+    cudaHostAlloc(&hostOutput, numInputRows * numInputCols * sizeof(float), cudaHostAllocDefault);
     wbTime_stop(Generic, "Importing data and creating memory on host");
 
     wbLog(TRACE, "The dimensions of input are ",
           numInputRows, "x", numInputCols);
 
     wbTime_start(GPU, "Allocating GPU memory.");
-    wbCheck(cudaMalloc((void **)&deviceInput, numInputRows * numInputCols * sizeof(float)));
-    wbCheck(cudaMalloc((void **)&deviceOutput, numInputRows * numInputCols * sizeof(float)));
-    wbCheck(cudaMalloc((void **)&deviceTmpOutput, numInputRows * numInputCols * sizeof(float)));
+    cudaMalloc((void **) &deviceInput, numInputRows * numInputCols * sizeof(float));
+    cudaMalloc((void **) &deviceOutput, numInputRows * numInputCols * sizeof(float));
+    cudaMalloc((void **) &deviceTmpOutput, numInputRows * numInputCols * sizeof(float));
     wbTime_stop(GPU, "Allocating GPU memory.");
 
     wbTime_start(GPU, "Clearing output memory.");
-    wbCheck(cudaMemset(deviceOutput, 0, numInputRows * numInputCols * sizeof(float)));
+    cudaMemset(deviceOutput, 0, numInputRows * numInputCols * sizeof(float));
     wbTime_stop(GPU, "Clearing output memory.");
 
     wbTime_start(GPU, "Copying input memory to the GPU.");
-    wbCheck(cudaMemcpy(deviceInput, hostInput, numInputRows * numInputCols * sizeof(float),
-                       cudaMemcpyHostToDevice));
+    cudaMemcpy(deviceInput, hostInput, numInputRows * numInputCols * sizeof(float), cudaMemcpyHostToDevice);
     wbTime_stop(GPU, "Copying input memory to the GPU.");
 
-    int gridSize = (numInputCols + BLOCK_SIZE - 1)/BLOCK_SIZE;
     wbTime_start(Compute, "Performing CUDA computation");
+
     for (int i = 0; i < numInputRows; ++i) {
-        exclusiveScan<<<gridSize, BLOCK_SIZE>>>(deviceInput, deviceTmpOutput, numInputCols);
-        wbCheck(cudaDeviceSynchronize());
+        recursiveScan(&deviceInput[numInputCols * i], &deviceTmpOutput[numInputCols * i], numInputCols);
     }
 
-    // You can change TranposeBlockDim and TranposeGridDim, but if you use kernel suggested in the manual file, these should be the correct ones
-    dim3 transposeBlockDim(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS);
-    dim3 transposeGridDim(ceil(numInputCols / (float)TRANSPOSE_TILE_DIM), ceil(numInputRows / (float)TRANSPOSE_TILE_DIM));
-    // TODO: call your transpose kernel here
+//    kernelPrint<<<1, 1>>>(deviceTmpOutput, numInputCols, numInputRows);
+//    wbCheck(cudaDeviceSynchronize());
 
+    dim3 transposeBlockDim(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS);
+    dim3 transposeGridDim(ceil(numInputCols / (float) TRANSPOSE_TILE_DIM), ceil(numInputRows / (float) TRANSPOSE_TILE_DIM));
+    transposeMatrix<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceInput, numInputCols, numInputRows);
     wbCheck(cudaDeviceSynchronize());
 
-    for (int i = 0; i < numInputCols; ++i) {
-        // TODO: call your 1d scan kernel for each row of the tranposed matrix here
+//    kernelPrint<<<1, 1>>>(deviceInput, numInputCols, numInputRows);
+//    wbCheck(cudaDeviceSynchronize());
 
-        wbCheck(cudaDeviceSynchronize());
+    for (int i = 0; i < numInputCols; ++i) {
+        recursiveScan(&deviceInput[numInputRows * i], &deviceTmpOutput[numInputRows * i], numInputRows);
     }
 
     // You can change TranposeBlockDim and TranposeGridDim, but if you use kernel suggested in the manual file, these should be the correct ones
     transposeBlockDim = dim3(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS);
-    transposeGridDim = dim3(ceil(numInputRows / (float)TRANSPOSE_TILE_DIM), ceil(numInputCols / (float)TRANSPOSE_TILE_DIM));
-    // TODO: call your transpose kernel to get the final result here
-
+    transposeGridDim = dim3(ceil(numInputRows / (float) TRANSPOSE_TILE_DIM), ceil(numInputCols / (float) TRANSPOSE_TILE_DIM));
+    transposeMatrix<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput, numInputRows, numInputCols);
     wbCheck(cudaDeviceSynchronize());
 
     wbTime_stop(Compute, "Performing CUDA computation");
 
     wbTime_start(Copy, "Copying output memory to the CPU");
-    wbCheck(cudaMemcpy(hostOutput, deviceOutput, numInputRows * numInputCols * sizeof(float),
-                       cudaMemcpyDeviceToHost));
+    cudaMemcpy(hostOutput, deviceOutput, numInputRows * numInputCols * sizeof(float), cudaMemcpyDeviceToHost);
     wbTime_stop(Copy, "Copying output memory to the CPU");
 
     wbTime_start(GPU, "Freeing GPU Memory");
@@ -107,7 +120,7 @@ int main(int argc, char **argv) {
     free(hostInput);
     cudaFreeHost(hostOutput);
 
-    wbCheck(cudaDeviceSynchronize());
+    cudaDeviceSynchronize();
 
 #if LAB_DEBUG
     system("pause");

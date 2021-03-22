@@ -1,15 +1,9 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-#include "exclusive_scan.h"
 #include "wb.h"
 
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true) {
-    if (code != cudaSuccess) {
-        fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-        if (abort) exit(code);
-    }
-}
+#include "exclusive_scan.h"
 
 int main(int argc, char **argv) {
     wbArg_t args;
@@ -17,6 +11,7 @@ int main(int argc, char **argv) {
     float *hostOutput; // The output list
     float *deviceInput;
     float *deviceOutput;
+    float *auxScanBuffer;
     int numElements; // number of elements in the list
 
     args = wbArg_read(argc, argv);
@@ -31,29 +26,28 @@ int main(int argc, char **argv) {
           numElements);
 
     wbTime_start(GPU, "Allocating GPU memory.");
-    wbCheck(cudaMalloc((void **) &deviceInput, numElements * sizeof(float)));
-    wbCheck(cudaMalloc((void **) &deviceOutput, numElements * sizeof(float)));
+    cudaMalloc((void **) &deviceInput, numElements * sizeof(float));
+    cudaMalloc((void **) &deviceOutput, numElements * sizeof(float));
+
     wbTime_stop(GPU, "Allocating GPU memory.");
 
     wbTime_start(GPU, "Clearing output memory.");
-    wbCheck(cudaMemset(deviceOutput, 0, numElements * sizeof(float)));
+    cudaMemset(deviceOutput, 0, numElements * sizeof(float));
     wbTime_stop(GPU, "Clearing output memory.");
 
     wbTime_start(GPU, "Copying input memory to the GPU.");
-    wbCheck(cudaMemcpy(deviceInput, hostInput, numElements * sizeof(float),
-                       cudaMemcpyHostToDevice));
+    cudaMemcpy(deviceInput, hostInput, numElements * sizeof(float), cudaMemcpyHostToDevice);
     wbTime_stop(GPU, "Copying input memory to the GPU.");
 
     wbTime_start(Compute, "Performing CUDA computation");
-    int gridSize = (numElements + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    exclusiveScan<<<gridSize, BLOCK_SIZE>>>(deviceInput, deviceOutput, numElements);
-    wbCheck(cudaDeviceSynchronize());
 
+    const int scanGridSize = (numElements + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    cudaMalloc((void **) &auxScanBuffer, scanGridSize * sizeof(float));
+    recursiveScan(deviceInput, deviceOutput, numElements);
     wbTime_stop(Compute, "Performing CUDA computation");
 
     wbTime_start(Copy, "Copying output memory to the CPU");
-    wbCheck(cudaMemcpy(hostOutput, deviceOutput, numElements * sizeof(float),
-                       cudaMemcpyDeviceToHost));
+    cudaMemcpy(hostOutput, deviceOutput, numElements * sizeof(float), cudaMemcpyDeviceToHost);
     wbTime_stop(Copy, "Copying output memory to the CPU");
 
     wbTime_start(GPU, "Freeing GPU Memory");
