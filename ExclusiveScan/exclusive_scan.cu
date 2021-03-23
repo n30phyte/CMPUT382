@@ -3,24 +3,27 @@
 
 #include "exclusive_scan.h"
 
-void recursiveScan(float* input, float* output, int numInputs) {
+void recursiveScan(float *input, float *output, int numInputs) {
     const int scanGridSize = (numInputs + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    float* aux;
-    wbCheck(cudaMalloc((void **) &aux, scanGridSize * sizeof(float)));
-
-    if(scanGridSize == 1) {
-        exclusiveScan<<<scanGridSize, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(input, output, NULL, numInputs);
+    if (scanGridSize == 1) {
+        exclusiveScan<<<scanGridSize, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(input, output, nullptr, numInputs);
         wbCheck(cudaDeviceSynchronize());
-        cudaFree(aux);
         return;
     } else {
-        float* scannedAux;
-        cudaMalloc((void **) &scannedAux, scanGridSize * sizeof(float));
+        float *aux;
+        float *scannedAux;
+        wbCheck(cudaMalloc((void **) &aux, scanGridSize * sizeof(float)));
+        wbCheck(cudaMalloc((void **) &scannedAux, scanGridSize * sizeof(float)));
+
         exclusiveScan<<<scanGridSize, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(input, output, aux, numInputs);
-        recursiveScan(aux, scannedAux, scanGridSize);
-        auxMerge<<<1, BLOCK_SIZE>>>(scannedAux, output, numInputs);
         wbCheck(cudaDeviceSynchronize());
+        recursiveScan(aux, scannedAux, scanGridSize);
+
+        int mergeGrids = (scanGridSize + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        auxMerge<<<mergeGrids, BLOCK_SIZE>>>(scannedAux, output, numInputs);
+        wbCheck(cudaDeviceSynchronize());
+
         cudaFree(scannedAux);
         cudaFree(aux);
     }
@@ -70,13 +73,13 @@ __global__ void exclusiveScan(const float *input, float *output, float *S, int N
 }
 
 __global__ void auxMerge(const float *offsets, float *input, int N) {
-    const unsigned int tx = threadIdx.x;
+    const unsigned int tx = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int startIdx = tx * BLOCK_SIZE;
 
-        for (unsigned int i = 0; i < BLOCK_SIZE; i++) {
-            unsigned int idx = i + startIdx;
-            if (idx < N) {
-                input[idx] += offsets[tx];
-            }
+    for (unsigned int i = 0; i < BLOCK_SIZE; i++) {
+        unsigned int idx = i + startIdx;
+        if (idx < N) {
+            input[idx] += offsets[tx];
         }
+    }
 }

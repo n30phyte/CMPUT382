@@ -1,6 +1,8 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
+#include <cmath>
+
 #include "wb.h"
 #include "exclusive_scan.h"
 
@@ -17,29 +19,45 @@ __global__ void kernelPrint(float *array, int cols, int rows) {
     printf("\n");
 }
 
-__global__ void transposeMatrix(float *input, float *output, int width, int height) {
-    __shared__ float tile[TRANSPOSE_TILE_DIM][TRANSPOSE_TILE_DIM];
+__global__ void transposeMatrix(const float *input, float *output, int width, int height) {
+    __shared__ float block[TRANSPOSE_TILE_DIM][TRANSPOSE_TILE_DIM + 1];
 
-    int x = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.y;
-    int inputIdx = x + y * width;
-    if (x < width && y < height) {
-        for (int i = 0; i < TRANSPOSE_TILE_DIM; i += TRANSPOSE_BLOCK_ROWS) {
-            tile[threadIdx.y + i][threadIdx.x] = input[inputIdx + i * width];
-        }
+    unsigned int xIndex = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.x;
+    unsigned int yIndex = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.y;
+
+    if ((xIndex < width) && (yIndex < height)) {
+        unsigned int index_in = yIndex * width + xIndex;
+        block[threadIdx.y][threadIdx.x] = input[index_in];
     }
     __syncthreads();
 
-    x = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.y;
-    int outputIdx = x + y * height;
+    xIndex = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.x;
+    yIndex = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.y;
 
-    if (y < width && x < height) {
-
-        for (int i = 0; i < TRANSPOSE_TILE_DIM; i += TRANSPOSE_BLOCK_ROWS) {
-            output[outputIdx + i * height] = tile[threadIdx.x][threadIdx.y + i];
-        }
+    if ((xIndex < height) && (yIndex < width)) {
+        unsigned int index_out = yIndex * height + xIndex;
+        output[index_out] = block[threadIdx.x][threadIdx.y];
     }
+}
+
+__global__ void transposeCoalesced(const float *idata, float *odata) {
+    __shared__ float tile[TRANSPOSE_TILE_DIM][TRANSPOSE_TILE_DIM + 1];
+
+    int x = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TRANSPOSE_TILE_DIM;
+
+    for (int j = 0; j < TRANSPOSE_TILE_DIM; j += TRANSPOSE_BLOCK_ROWS)
+        tile[threadIdx.y + j][threadIdx.x] = idata[(y + j) * width + x];
+
+    __syncthreads();
+
+    x = blockIdx.y * TRANSPOSE_TILE_DIM + threadIdx.x;  // transpose block offset
+    y = blockIdx.x * TRANSPOSE_TILE_DIM + threadIdx.y;
+
+    for (int j = 0; j < TRANSPOSE_TILE_DIM; j += TRANSPOSE_BLOCK_ROWS)
+        odata[(y + j) * width + x] = tile[threadIdx.x][threadIdx.y + j];
+
 }
 
 int main(int argc, char **argv) {
@@ -87,20 +105,19 @@ int main(int argc, char **argv) {
 
     dim3 transposeBlockDim(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS);
     dim3 transposeGridDim(ceil(numInputCols / (float) TRANSPOSE_TILE_DIM), ceil(numInputRows / (float) TRANSPOSE_TILE_DIM));
-    transposeMatrix<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceInput, numInputCols, numInputRows);
+//    transposeCoalesced<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput, numInputCols, numInputRows);
+    transposeCoalesced<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput);
     wbCheck(cudaDeviceSynchronize());
 
-//    kernelPrint<<<1, 1>>>(deviceInput, numInputCols, numInputRows);
-//    wbCheck(cudaDeviceSynchronize());
-
     for (int i = 0; i < numInputCols; ++i) {
-        recursiveScan(&deviceInput[numInputRows * i], &deviceTmpOutput[numInputRows * i], numInputRows);
+        recursiveScan(&deviceOutput[numInputRows * i], &deviceTmpOutput[numInputRows * i], numInputRows);
     }
 
     // You can change TranposeBlockDim and TranposeGridDim, but if you use kernel suggested in the manual file, these should be the correct ones
     transposeBlockDim = dim3(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS);
     transposeGridDim = dim3(ceil(numInputRows / (float) TRANSPOSE_TILE_DIM), ceil(numInputCols / (float) TRANSPOSE_TILE_DIM));
-    transposeMatrix<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput, numInputRows, numInputCols);
+//    transposeCoalesced<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput, numInputRows, numInputCols);
+    transposeCoalesced<<<transposeGridDim, transposeBlockDim>>>(deviceTmpOutput, deviceOutput);
     wbCheck(cudaDeviceSynchronize());
 
     wbTime_stop(Compute, "Performing CUDA computation");
