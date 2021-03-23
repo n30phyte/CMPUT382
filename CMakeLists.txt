@@ -12,5 +12,6 @@ add_subdirectory(Histogram)
 add_subdirectory(MatrixMultiplication)
 add_subdirectory(ParallelMerge)
 add_subdirectory(Reduction)
+add_subdirectory(RadixSort)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")
