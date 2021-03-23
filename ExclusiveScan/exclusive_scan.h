@@ -14,10 +14,10 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
     }
 }
 
-__global__ void exclusiveScan(const float* input, float* output, float* S, int N);
+__global__ void exclusiveScan(const float *input, float *output, float *S, int N);
 
-__global__ void auxMerge(const float* offsets, float* input, int N);
+__global__ void auxMerge(const float *offsets, float *input, int N);
 
-void recursiveScan(float* input, float* output, int numInputs);
+void recursiveScan(float *input, float *output, int numInputs);
 
 #endif

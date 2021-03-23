@@ -18,7 +18,7 @@ __global__ void calculate_histogram(unsigned int *inputValues, unsigned int *out
     unsigned int idx = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int stride = blockDim.x * gridDim.x;
 
-    while(idx < inputLength) {
+    while (idx < inputLength) {
         unsigned int bin = inputValues[idx];
         atomicAdd(&(histogram_private[bin]), 1);
         idx += stride;

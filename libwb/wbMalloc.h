@@ -98,31 +98,31 @@ static inline void *_realloc(void *ptr, size_t size) THROW {
 #else /* WB_USE_CUSTOM_MALLOC */
 
 static inline void *xMalloc(size_t sz) {
-  void *mem = nullptr;
-  if (sz != 0) {
-    mem = malloc(sz);
-  }
-  return mem;
+    void *mem = nullptr;
+    if (sz != 0) {
+        mem = malloc(sz);
+    }
+    return mem;
 }
 
 static inline void xFree(void *mem) {
-  if (mem != nullptr) {
-    free(mem);
-  }
-  return;
+    if (mem != nullptr) {
+        free(mem);
+    }
+    return;
 }
 
 static inline void *xRealloc(void *mem, size_t sz) {
-  if (mem == nullptr) {
-    return NULL;
-  } else if (sz == 0) {
-    xFree(mem);
-    return NULL;
-  } else {
-    void *res = realloc(mem, sz);
-    wbAssert(res != nullptr);
-    return res;
-  }
+    if (mem == nullptr) {
+        return NULL;
+    } else if (sz == 0) {
+        xFree(mem);
+        return NULL;
+    } else {
+        void *res = realloc(mem, sz);
+        wbAssert(res != nullptr);
+        return res;
+    }
 }
 
 #define wbNew(type) ((type *)wbMalloc(sizeof(type)))

@@ -37,10 +37,12 @@
 #include <windows.h>
 #define WB_USE_WINDOWS
 #else /* _MSC_VER */
+
 #include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #define WB_USE_UNIX
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -101,7 +103,9 @@
 #endif /* WB_USE_JSON11 */
 
 #if 1 || WB_USE_JSON11
+
 #include "vendor/json11.hpp"
+
 #endif /* WB_USE_JSON11 */
 
 /***********************************************************/

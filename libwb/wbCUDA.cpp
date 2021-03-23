@@ -1,5 +1,6 @@
 
 #include "wb.h"
+
 #ifdef WB_USE_CUDA
 
 int _cudaMemoryListIdx = 0;
