@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <wb.h>
+#include <chrono>
 
 int main(int argc, char **argv) {
     wbArg_t args;
@@ -15,8 +16,17 @@ int main(int argc, char **argv) {
     wbLog(TRACE, "The number of input elements in the input is ",
           numElements);
 
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
     wbTime_start(Compute, "Performing Sort computation");
+    auto t1 = high_resolution_clock::now();
     std::sort(hostInput, hostInput + numElements);
+    auto t2 = high_resolution_clock::now();
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << ms_int.count() << "ms\n";
     wbTime_stop(Compute, "Performing Sort computation");
 
     wbSolution(args, hostInput, numElements);
