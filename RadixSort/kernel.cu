@@ -135,7 +135,7 @@ void sort(int *d_deviceInput, int *d_deviceOutput, int numElements) {
 
     dim3 blockSize(BLOCK_SIZE, 1, 1);
     dim3 gridSize((numElements + BLOCK_SIZE - 1) / BLOCK_SIZE, 1, 1);
-    cudaStream_t stream;
+
     for (int i = 0; i < 16; i++) {
         checkBits<<<gridSize, blockSize, BLOCK_SIZE * sizeof(int)>>>(d_deviceInput, bitArray, numElements, i);
         cudaDeviceSynchronize();

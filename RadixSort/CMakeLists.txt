@@ -1,8 +1,8 @@
 add_executable(RadixSort kernel.cu)
 target_link_libraries(RadixSort PRIVATE libwb)
 
-add_executable(RadixSortCpu main.cpp)
-target_link_libraries(RadixSortCpu PRIVATE wb)
+add_executable(SortCpu main.cpp)
+target_link_libraries(SortCpu PRIVATE libwb)
 
 set_target_properties(
         RadixSort

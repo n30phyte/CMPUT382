@@ -3,15 +3,20 @@ project(CMPUT382 CUDA CXX)
 
 set(CMAKE_CUDA_STANDARD 14)
 
-add_subdirectory(libwb)
-include_directories(libwb)
-add_subdirectory(VectorAdd)
-add_subdirectory(Convolution)
-add_subdirectory(ExclusiveScan)
-add_subdirectory(Histogram)
-add_subdirectory(MatrixMultiplication)
-add_subdirectory(ParallelMerge)
-add_subdirectory(Reduction)
-add_subdirectory(RadixSort)
+add_subdirectory(external)
+include_directories(external/libwb)
+
+add_subdirectory(VectorAdd)            # Lab 2
+add_subdirectory(ParallelMerge)        # Lab 3
+add_subdirectory(MatrixMultiplication) # Lab 4
+add_subdirectory(Histogram)            # Lab 5
+add_subdirectory(Convolution)          # Lab 6
+add_subdirectory(Reduction)            # Lab 7
+add_subdirectory(ExclusiveScan)        # Lab 8
+add_subdirectory(RadixSort)            # Lab 9
+
+find_package(OpenCL REQUIRED)
+
+add_subdirectory(VectorAddCL)          # Lab 10
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")
