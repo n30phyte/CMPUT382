@@ -4,7 +4,7 @@
 #define __wbPPM_H__
 
 START_EXTERN_C
-        wbImage_t
+wbImage_t
 
 wbPPM_import(const char *filename);
 

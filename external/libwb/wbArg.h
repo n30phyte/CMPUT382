@@ -34,7 +34,7 @@ EXTERN_C wbArg_t
 wbArg_new(int *argc, char ***argv);
 
 EXTERN_C void wbArg_delete(wbArg_t
-arg);
+                           arg);
 EXTERN_C wbArg_t
 
 wbArg_read(int argc, char **argv);

@@ -150,6 +150,7 @@ namespace std {
 #   pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
 #   define $osx $yes
 #elif defined(__linux__)
+
 #   include <arpa/inet.h>
 #   include <net/if.h>
 #   include <netinet/in.h>
@@ -157,6 +158,7 @@ namespace std {
 #   include <sys/socket.h>
 #   include <sys/time.h>
 #   include <unistd.h>
+
 #   define $linux $yes
 #else //elif defined(__unix__)
 #   if defined(__VMS)
@@ -530,7 +532,7 @@ namespace sole {
                  for (struct ifaddrs *ifap = ifaphead; ifap; ifap = ifap->ifa_next) {
                      if (ifap->ifa_addr && ifap->ifa_addr->sa_family == AF_LINK) {
                          struct sockaddr_dl *sdl = reinterpret_cast<struct sockaddr_dl *>(ifap->ifa_addr);
-                         caddr_t ap = (caddr_t)(sdl->sdl_data + sdl->sdl_nlen);
+                         caddr_t ap = (caddr_t) (sdl->sdl_data + sdl->sdl_nlen);
                          int alen = sdl->sdl_alen;
                          if (ap && alen > 0) {
                              _node.resize(alen);
@@ -556,7 +558,7 @@ namespace sole {
                  for (struct ifaddrs *ifap = ifaphead; ifap; ifap = ifap->ifa_next) {
                      if (ifap->ifa_addr && ifap->ifa_addr->sa_family == AF_LINK) {
                          struct sockaddr_dl *sdl = reinterpret_cast<struct sockaddr_dl *>(ifap->ifa_addr);
-                         caddr_t ap = (caddr_t)(sdl->sdl_data + sdl->sdl_nlen);
+                         caddr_t ap = (caddr_t) (sdl->sdl_data + sdl->sdl_nlen);
                          int alen = sdl->sdl_alen;
                          if (ap && alen > 0) {
                              _node.resize(alen);
@@ -640,7 +642,7 @@ namespace sole {
 
     inline uuid uuid4() {
         std::random_device rd;
-        std::uniform_int_distribution <uint64_t> dist(0, (uint64_t)(~0));
+        std::uniform_int_distribution<uint64_t> dist(0, (uint64_t) (~0));
 
         uuid my;
 
@@ -656,7 +658,7 @@ namespace sole {
     inline uuid uuid1() {
         // Number of 100-ns intervals since 00:00:00.00 15 October 1582; [ref] uuid.py
         uint64_t ns100_intervals = get_time(0x01b21dd213814000ULL);
-        uint16_t clock_seq = (uint16_t)(ns100_intervals & 0x3fff);  // 14-bits max
+        uint16_t clock_seq = (uint16_t) (ns100_intervals & 0x3fff);  // 14-bits max
         uint64_t mac = get_any_mac48();                               // 48-bits max
 
         uint32_t time_low = ns100_intervals & 0xffffffff;
@@ -675,7 +677,7 @@ namespace sole {
         upper_ |= (uint64_t) time_hi_version;
 
         // Build the low 32 bytes, using the clock sequence number
-        lower_ = (uint64_t)((clock_seq_hi_variant << 8) | clock_seq_low) << 48;
+        lower_ = (uint64_t) ((clock_seq_hi_variant << 8) | clock_seq_low) << 48;
         lower_ |= mac;
 
         // Set the variant to RFC 4122.
@@ -696,7 +698,7 @@ namespace sole {
         // Number of 100-ns intervals since Unix epoch time
         uint64_t ns100_intervals = get_time(0);
         uint64_t pid = $windows(_getpid()) $welse(getpid());
-        uint16_t pid16 = (uint16_t)(pid & 0xffff); // 16-bits max
+        uint16_t pid16 = (uint16_t) (pid & 0xffff); // 16-bits max
         uint64_t mac = get_any_mac48();              // 48-bits max
 
         uint32_t time_low = ns100_intervals & 0xffffffff;
@@ -715,7 +717,7 @@ namespace sole {
         upper_ |= (uint64_t) time_hi_version;
 
         // Build the low 32 bytes, using the mac and pid number.
-        lower_ = (uint64_t)((pid_hi << 8) | pid_low) << 48;
+        lower_ = (uint64_t) ((pid_hi << 8) | pid_low) << 48;
         lower_ |= mac;
 
         // Set the version number.
