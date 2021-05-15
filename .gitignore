@@ -1,3 +1,2 @@
-eclipse/
-myOutput*.*
-/.metadata/
+build/
+myOutput.*
