@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
+  <component name="CidrRootsConfiguration">
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/.metadata" />
+      <file path="$PROJECT_DIR$/Convolution/.settings" />
+      <file path="$PROJECT_DIR$/ExclusiveScan/Dataset" />
+      <file path="$PROJECT_DIR$/MatrixMultiplication/.settings" />
+      <file path="$PROJECT_DIR$/MatrixMultiplication/Debug-cpu" />
+      <file path="$PROJECT_DIR$/MatrixMultiplication/Debug-gpu_mul" />
+      <file path="$PROJECT_DIR$/MatrixMultiplication/Debug-gpu_opt" />
+      <file path="$PROJECT_DIR$/VectorAdd/Debug" />
+      <file path="$PROJECT_DIR$/build" />
+    </excludeRoots>
+  </component>
+</project>

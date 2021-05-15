@@ -4,6 +4,7 @@ project(CMPUT382 CUDA CXX)
 set(CMAKE_CUDA_STANDARD 14)
 
 add_subdirectory(external)
+
 include_directories(external/libwb)
 
 add_subdirectory(VectorAdd)            # Lab 2

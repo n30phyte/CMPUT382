@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
     wbCheck(clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *) &deviceInput2));
     wbCheck(clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *) &deviceOutput));
 
-    size_t global_work_size[3] = {(size_t)((inputLength + 512 - 1) / 512) * 512, 0, 0};
+    size_t global_work_size[3] = {(size_t) ((inputLength + 512 - 1) / 512) * 512, 0, 0};
     size_t local_work_size[3] = {512, 0, 0};
 
     wbCheck(clEnqueueNDRangeKernel(queue, kernel, 1, nullptr, global_work_size, local_work_size, 0, nullptr, nullptr));
